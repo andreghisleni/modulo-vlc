@@ -10,7 +10,7 @@ jobs:
   # JOB 1: COMPILAÇÃO PARA LINUX (.AppImage)
   # ==========================================
   build-linux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       contents: write 
 
