@@ -1,0 +1,79 @@
+name: Gerar AppImage Linux
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write 
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v4
+
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Instalar Dependências do Sistema (Tkinter)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk
+
+    - name: Instalar Dependências do Python
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pyinstaller
+
+    - name: Injetar URLs de Produção para o Build
+      run: |
+        sed -i 's|http://localhost:3004|${{ secrets.PROD_API_URL }}|g' main.py
+        sed -i 's|sua_chave_aqui|${{ secrets.PROD_API_KEY }}|g' main.py
+
+    - name: Compilar Binário Base (PyInstaller)
+      run: |
+        pyinstaller --noconsole --onefile --name "Monitor_Votacao" main.py
+        chmod +x dist/Monitor_Votacao
+
+    - name: Empacotar como AppImage
+      run: |
+        # 1. Cria a estrutura de pastas exigida pelo AppImage (AppDir)
+        mkdir -p AppDir/usr/bin
+        cp dist/Monitor_Votacao AppDir/usr/bin/
+        
+        # 2. Cria o script de inicialização (AppRun)
+        echo '#!/bin/sh' > AppDir/AppRun
+        echo 'cd "$(dirname "$0")"' >> AppDir/AppRun
+        echo 'exec ./usr/bin/Monitor_Votacao' >> AppDir/AppRun
+        chmod +x AppDir/AppRun
+        
+        # 3. Cria o arquivo de Desktop (necessário para integração)
+        echo '[Desktop Entry]' > AppDir/Monitor_Votacao.desktop
+        echo 'Name=Monitor de Votacao' >> AppDir/Monitor_Votacao.desktop
+        echo 'Exec=Monitor_Votacao' >> AppDir/Monitor_Votacao.desktop
+        echo 'Icon=monitor' >> AppDir/Monitor_Votacao.desktop
+        echo 'Type=Application' >> AppDir/Monitor_Votacao.desktop
+        echo 'Categories=Utility;' >> AppDir/Monitor_Votacao.desktop
+        
+        # 4. Cria um ícone vazio em PNG (obrigatório pelo AppImageTool)
+        touch AppDir/monitor.png
+        
+        # 5. Baixa o AppImageTool
+        wget -q -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage"
+        chmod +x appimagetool
+        
+        # 6. Compila o AppImage final (usa extract-and-run para evitar problemas de FUSE no GitHub Actions)
+        ARCH=x86_64 ./appimagetool --appimage-extract-and-run AppDir Monitor_Votacao-x86_64.AppImage
+
+    - name: Publicar Release Oficial
+      uses: softprops/action-gh-release@v2
+      with:
+        files: Monitor_Votacao-x86_64.AppImage
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
