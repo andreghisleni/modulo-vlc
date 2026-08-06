@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  # ==========================================
+ # ==========================================
   # JOB 1: COMPILAÇÃO PARA LINUX (.AppImage)
   # ==========================================
   build-linux:
@@ -48,24 +48,33 @@ jobs:
         mkdir -p AppDir/usr/bin
         cp dist/Monitor_Votacao AppDir/usr/bin/
         
-        echo '#!/bin/sh' > AppDir/AppRun
-        echo 'cd "$(dirname "$0")"' >> AppDir/AppRun
-        echo 'exec ./usr/bin/Monitor_Votacao' >> AppDir/AppRun
+        # 1. Cria o AppRun mais robusto (Padrão oficial)
+        cat << 'EOF' > AppDir/AppRun
+        #!/bin/sh
+        HERE="$(dirname "$(readlink -f "${0}")")"
+        exec "${HERE}/usr/bin/Monitor_Votacao" "$@"
+        EOF
         chmod +x AppDir/AppRun
         
-        echo '[Desktop Entry]' > AppDir/Monitor_Votacao.desktop
-        echo 'Name=Monitor de Votacao' >> AppDir/Monitor_Votacao.desktop
-        echo 'Exec=Monitor_Votacao' >> AppDir/Monitor_Votacao.desktop
-        echo 'Icon=monitor' >> AppDir/Monitor_Votacao.desktop
-        echo 'Type=Application' >> AppDir/Monitor_Votacao.desktop
-        echo 'Categories=Utility;' >> AppDir/Monitor_Votacao.desktop
+        # 2. Cria o arquivo .desktop rigorosamente padronizado
+        cat << 'EOF' > AppDir/Monitor_Votacao.desktop
+        [Desktop Entry]
+        Version=1.0
+        Type=Application
+        Name=Monitor de Votacao
+        Exec=Monitor_Votacao
+        Icon=Monitor_Votacao
+        Categories=Utility;
+        EOF
         
-        # Correção do Erro 8: Gera um PNG transparente 1x1 real e válido
-        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" | base64 -d > AppDir/monitor.png
+        # 3. Usa o ImageMagick (nativo no Ubuntu) para criar um PNG 256x256 válido
+        convert -size 256x256 xc:transparent AppDir/Monitor_Votacao.png
         
-        wget -q -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage"
+        # 4. Baixa a versão contínua (mais estável) do appimagetool
+        wget -q -O appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         chmod +x appimagetool
         
+        # 5. Compila o AppImage
         ARCH=x86_64 ./appimagetool --appimage-extract-and-run AppDir Monitor_Votacao-x86_64.AppImage
 
     - name: Publicar AppImage na Release
