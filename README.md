@@ -1,4 +1,13 @@
-
+# 1. Ativar a Interface Web do VLC
+## No computador que fará a projeção, você precisa habilitar o controle remoto do VLC:
+- Abra o VLC e vá em Ferramentas > Preferências (ou Ctrl + P).
+- No canto inferior esquerdo, em Exibir configurações, marque Tudo.
+- No menu lateral esquerdo, vá em Interface > Interfaces Principais e marque a caixa Web.
+- Expanda o menu Interfaces Principais, clique em Lua.
+- Em Lua HTTP, defina uma senha (ex: 1234).
+- Reinicie o VLC.
+  
+- Para testar se funcionou, abra o navegador e acesse http://localhost:8080. Ele pedirá usuário e senha (deixe o usuário em branco e coloque a senha que você definiu).
 ---
 
 # 🚀 Guia de Lançamento (Release) - Monitor de Votação
