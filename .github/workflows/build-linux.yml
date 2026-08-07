@@ -88,9 +88,9 @@ jobs:
   # JOB 2: COMPILAÇÃO PARA WINDOWS (.exe)
   # ==========================================
   build-windows:
-    runs-on: windows-latest
+    runs-on: [self-hosted, Windows, X64]
     permissions:
-      contents: write 
+      contents: write
 
     steps:
     - name: Checkout do código
