@@ -95,6 +95,8 @@ class VoteMonitorApp:
         """Tenta extrair a mensagem de erro do JSON da API e joga no Log."""
         self.log(f"[API ERROR] HTTP {response.status_code} na rota {response.url}")
         self.log(f"[API RAW RESPONSE] {response.text}")
+        self.log(f"[API HEADERS] {response.headers}")
+        self.log(f"[API key] {API_KEY}")
         
         try:
             data = response.json()
